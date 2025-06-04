@@ -1,0 +1,87 @@
+version: '3.8'
+
+services:
+  nginx:
+    image: nginx:alpine
+    container_name: hrbot-nginx
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - frontend
+      - backend
+    networks:
+      - hrbot-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: hrbot-backend
+    # No ports exposed to host - only accessible through nginx
+    environment:
+      - DATABASE_URL=sqlite:///./data/database.db
+    volumes:
+      # Mount .env file from host
+      - ./backend/.env:/app/.env:ro
+      # Persist database
+      - hrbot-db:/app/data
+      # Mount HR documents
+      - ./hr-documents:/app/data/hr_docs:ro
+    networks:
+      - hrbot-network
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: hrbot-frontend
+    # No ports exposed to host - only accessible through nginx
+    depends_on:
+      - backend
+    networks:
+      - hrbot-network
+    environment:
+      - REACT_APP_API_URL=
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    restart: unless-stopped
+
+  # Optional: Database viewer for development
+  adminer:
+    image: adminer:latest
+    container_name: hrbot-adminer
+    ports:
+      - "8080:8080"
+    networks:
+      - hrbot-network
+    profiles:
+      - dev
+    restart: unless-stopped
+
+networks:
+  hrbot-network:
+    driver: bridge
+
+volumes:
+  hrbot-db:
+    driver: local

@@ -1,0 +1,47 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+
+# Testing
+.pytest_cache/
+htmlcov/
+.coverage
+*.log
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Database (will be created in container)
+data/database.db
+data/*.db
+
+# Environment files (mounted separately)
+.env
+.env.local
+
+# Git
+.git/
+.gitignore
+
+# Documentation
+*.md
+docs/
+
+# Scripts not needed in production
+scripts/test_*.py
+scripts/debug_*.py
+scripts/update_*.py
+
+# Temporary files
+*.tmp
+*.temp
+.DS_Store
